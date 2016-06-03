@@ -93,6 +93,7 @@ router.post('/', function(req, res) {
         "* _" + trigger + " support [list item number]_ - Add your name to the item specified\n" +
         "* _" + trigger + " remove [list item number]_ - Remote the item specified\n" +
         "* _" + trigger + " complete [list item number]_ - Complete the item.\n" +
+        "* _" + trigger + " alphabetize_ - Sort the list alphabetically\n" +
         "* _" + trigger + " clear list_ - Clear all active list items\n" +
         "* _" + trigger + " help_ - show all available commands\n";
 
@@ -156,6 +157,54 @@ router.post('/', function(req, res) {
         endRequest('There are no items in the list to show.');
       }
     },
+    
+    // Sort the list by items by name
+    sortByAlpha = function(item) {
+      if(listExists) {
+        client.lrange(channelId, 0, -1, function(err, reply) {
+          if(err || reply == null) {
+            endRequest('There are no items in the list to show.');
+          } else {
+          
+        	// Get the sorted list
+          	sorted = reply.sort(function (a, b) {
+				return a.localeCompare(b, 'en', {'sensitivity': 'base'});
+			});
+          
+          	// Clear the list before re-adding the sorted items
+			client.del(channelId, function(err, reply) {
+			  if(err) {
+				endRequest('Something went wrong. Please try again.');
+			  } else {
+			  
+			  	// Re-add the sorted list
+				client.rpush(channelId, sorted, function(err, reply) {
+				  if(err) {
+					endRequest('Something went wrong. Please try again.');
+				  } else {
+				  	// Output the new list
+					var outputItem = '';
+					var outputString = '';
+
+					sorted.forEach(function (item, index) {
+					  outputIndex = index + 1;
+					  outputItem = outputIndex + ') ' + item + "\n";
+					  outputString += outputItem;
+					});
+
+					endRequest(outputString);
+
+				  }
+				});
+			  }
+			});
+          
+          }
+        });
+      } else {
+        endRequest('There are no items in the list to show.');
+      }
+    },
 
     // Add name of user to list of users who have requested the list item
     supportItem = function(item) {
@@ -203,6 +252,9 @@ router.post('/', function(req, res) {
         break;
       case /^\s*clear list.*/gi.test(item):
         clearList();
+        break;
+      case /^\s*alphabetize.*/gi.test(item):
+        sortByAlpha();
         break;
       case /^\s*help*/gi.test(item):
         help();
