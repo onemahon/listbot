@@ -91,6 +91,7 @@ router.post('/', function(req, res) {
         "* _" + trigger + " show [list item number]_ - Show the item specified\n" +
         "* _" + trigger + " add [new list item text]_ - Add a new item to the list\n" +
         "* _" + trigger + " support [list item number]_ - Add your name to the item specified\n" +
+        "* _" + trigger + " unsupport [list item number]_ - Remove your name from the item specified\n" +
         "* _" + trigger + " remove [list item number]_ - Remote the item specified\n" +
         "* _" + trigger + " complete [list item number]_ - Complete the item.\n" +
         "* _" + trigger + " alphabetize_ - Sort the list alphabetically\n" +
@@ -157,7 +158,7 @@ router.post('/', function(req, res) {
         endRequest('There are no items in the list to show.');
       }
     },
-    
+
     // Sort the list by items by name
     sortByAlpha = function(item) {
       if(listExists) {
@@ -165,18 +166,18 @@ router.post('/', function(req, res) {
           if(err || reply == null) {
             endRequest('There are no items in the list to show.');
           } else {
-          
+
         	// Get the sorted list
           	sorted = reply.sort(function (a, b) {
 				return a.localeCompare(b, 'en', {'sensitivity': 'base'});
 			});
-          
+
           	// Clear the list before re-adding the sorted items
 			client.del(channelId, function(err, reply) {
 			  if(err) {
 				endRequest('Something went wrong. Please try again.');
 			  } else {
-			  
+
 			  	// Re-add the sorted list
 				client.rpush(channelId, sorted, function(err, reply) {
 				  if(err) {
@@ -198,7 +199,7 @@ router.post('/', function(req, res) {
 				});
 			  }
 			});
-          
+
           }
         });
       } else {
@@ -228,6 +229,29 @@ router.post('/', function(req, res) {
       }
     };
 
+    // Remove name of user from list of users who have requested the list item
+    unsupportItem = function(item) {
+      if(listExists) {
+        index = parseInt(item.match(/(\d+)/)[0]);
+        client.lindex(channelId, index - 1, function(err, reply) {
+          if(err || reply == null) {
+            endRequest('That number is not associated with a list item');
+          } else {
+            withNameRemoved = reply.replace(userName, "").replace(",,", ",");
+            client.lset(channelId, index - 1, withNameRemoved, function(err, reply) {
+              if(err) {
+                endRequest('That number is not associated with a list item');
+              } else {
+                endRequest('Duly noted.');
+              }
+            });
+          }
+        });
+      } else {
+        endRequest('There are no items in the list to support.');
+      }
+    };
+
   client.exists(channelId, function(err, response) {
     listExists = response == 1;
 
@@ -243,6 +267,9 @@ router.post('/', function(req, res) {
         break;
       case /^\s*support\s*[\d]+/i.test(item):
         supportItem(item);
+        break;
+      case /^\s*unsupport\s*[\d]+/i.test(item):
+        unsupportItem(item);
         break;
       case /^\s*remove\s*[\d]+/gi.test(item):
         removeItem(item);
