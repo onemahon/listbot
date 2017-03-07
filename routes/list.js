@@ -215,7 +215,12 @@ router.post('/', function(req, res) {
           if(err || reply == null) {
             endRequest('That number is not associated with a list item');
           } else {
-            client.lset(channelId, index - 1, reply + ", " + userName, function(err, reply) {
+            withNameAdded = reply;
+            if (!withNameAdded.includes(userName)) {
+              withNameAdded = reply + ", " + userName;
+            }
+
+            client.lset(channelId, index - 1, withNameAdded, function(err, reply) {
               if(err) {
                 endRequest('That number is not associated with a list item');
               } else {
