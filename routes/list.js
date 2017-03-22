@@ -144,10 +144,18 @@ router.post('/', function(req, res) {
           } else {
             var outputItem = '';
             var outputString = '';
+            var indexOfMostSupportedItem = mostSupportedItemIndex(reply)
 
             reply.forEach(function (item, index) {
               outputIndex = index + 1;
-              outputItem = outputIndex + ') ' + item + "\n";
+
+              if (index == indexOfMostSupportedItem) {
+                // Bold list item with most support
+                outputItem = "*" + outputIndex + ') ' + item + "*" + "\n" ;
+              } else {
+                outputItem = outputIndex + ') ' + item + "\n";
+              }
+
               outputString += outputItem;
             });
 
@@ -296,5 +304,20 @@ router.post('/', function(req, res) {
     }
   });
 });
+
+function mostSupportedItemIndex(items) {
+  var indexOfMostSupportedItem = 0;
+  var countOfMostSupport = 0;
+
+  items.forEach(function (item, index) {
+    var supportingNames = item.split(',');  
+    if (supportingNames.length > countOfMostSupport) {
+      countOfMostSupport = supportingNames.length;
+      indexOfMostSupportedItem = index
+    }
+  });
+
+  return indexOfMostSupportedItem;
+};
 
 module.exports = router;
