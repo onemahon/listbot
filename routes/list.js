@@ -175,38 +175,38 @@ router.post('/', function(req, res) {
             endRequest('There are no items in the list to show.');
           } else {
 
-        	// Get the sorted list
-          	sorted = reply.sort(function (a, b) {
-				return a.localeCompare(b, 'en', {'sensitivity': 'base'});
-			});
+          // Get the sorted list
+            sorted = reply.sort(function (a, b) {
+        return a.localeCompare(b, 'en', {'sensitivity': 'base'});
+      });
 
-          	// Clear the list before re-adding the sorted items
-			client.del(channelId, function(err, reply) {
-			  if(err) {
-				endRequest('Something went wrong. Please try again.');
-			  } else {
+            // Clear the list before re-adding the sorted items
+      client.del(channelId, function(err, reply) {
+        if(err) {
+        endRequest('Something went wrong. Please try again.');
+        } else {
 
-			  	// Re-add the sorted list
-				client.rpush(channelId, sorted, function(err, reply) {
-				  if(err) {
-					endRequest('Something went wrong. Please try again.');
-				  } else {
-				  	// Output the new list
-					var outputItem = '';
-					var outputString = '';
+          // Re-add the sorted list
+        client.rpush(channelId, sorted, function(err, reply) {
+          if(err) {
+          endRequest('Something went wrong. Please try again.');
+          } else {
+            // Output the new list
+          var outputItem = '';
+          var outputString = '';
 
-					sorted.forEach(function (item, index) {
-					  outputIndex = index + 1;
-					  outputItem = outputIndex + ') ' + item + "\n";
-					  outputString += outputItem;
-					});
+          sorted.forEach(function (item, index) {
+            outputIndex = index + 1;
+            outputItem = outputIndex + ') ' + item + "\n";
+            outputString += outputItem;
+          });
 
-					endRequest(outputString);
+          endRequest(outputString);
 
-				  }
-				});
-			  }
-			});
+          }
+        });
+        }
+      });
 
           }
         });
@@ -250,7 +250,7 @@ router.post('/', function(req, res) {
           if(err || reply == null) {
             endRequest('That number is not associated with a list item');
           } else {
-            withNameRemoved = reply.replace(userName, "").replace(",,", ",");
+            withNameRemoved = reply.replace(userName + ",", "").replace(userName, "").replace(",,", ",");
             client.lset(channelId, index - 1, withNameRemoved, function(err, reply) {
               if(err) {
                 endRequest('That number is not associated with a list item');
